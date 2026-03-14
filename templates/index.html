@@ -1,0 +1,175 @@
+{% extends "layout.html" %} {% import "_macros.html" as macros %} {% block
+content %}
+
+<h1 class="text-3xl font-bold mb-6">Sistema de Pedidos - Pizzería</h1>
+<form method="POST">
+{{ pizzaForm.hidden_tag() }} {{ clienteForm.hidden_tag() }}
+<div class="grid grid-cols-2 gap-6">
+    <div>
+    <h2 class="text-xl font-semibold mb-4">Datos del Cliente</h2>
+    {{ macros.campo(clienteForm.nombre) }} {{
+    macros.campo(clienteForm.direccion) }} {{
+    macros.campo(clienteForm.telefono) }} {{ macros.campo(clienteForm.fecha)
+    }}
+    </div>
+    <div>
+    <h2 class="text-xl font-semibold mb-4">Pizza</h2>
+    {{ macros.campo(pizzaForm.tamano) }} {{
+    macros.campo(pizzaForm.ingredientes) }} {{
+    macros.campo(pizzaForm.cantidad) }}
+    <button
+        type="submit"
+        formaction="/agregar"
+        class="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-5 py-2.5"
+    >
+        Agregar
+    </button>
+    </div>
+</div>
+</form>
+
+<h2 class="text-xl font-semibold mt-10 mb-4">Detalle del Pedido</h2>
+<table class="w-full text-sm text-left text-gray-500">
+<thead class="text-xs text-gray-700 uppercase bg-gray-50">
+    <tr>
+    <th>Tamaño</th>
+    <th>Ingredientes</th>
+    <th>Cantidad</th>
+    <th>Subtotal</th>
+    <th></th>
+    </tr>
+</thead>
+<tbody>
+    {% for pizza in carrito %}
+    <tr class="bg-white border-b">
+    <td>{{ pizza.tamano }}</td>
+    <td>{{ pizza.ingredientes }}</td>
+    <td>{{ pizza.cantidad }}</td>
+    <td>${{ pizza.subtotal }}</td>
+    <td>
+        <form action="/quitar" method="POST">
+        {{ pizzaForm.hidden_tag() }}
+        <input type="hidden" name="indice" value="{{ loop.index0 }}" />
+        <button class="text-red-600 font-bold">Quitar</button>
+        </form>
+    </td>
+    </tr>
+    {% endfor %}
+</tbody>
+</table>
+
+<h2 class="text-xl font-bold mt-6">Total: ${{ total }}</h2>
+<form action="/terminar" method="POST" class="mt-4">
+{{ clienteForm.hidden_tag() }}
+<input type="hidden" name="nombre" id="nombre_hidden" />
+<input type="hidden" name="direccion" id="direccion_hidden" />
+<input type="hidden" name="telefono" id="telefono_hidden" />
+<input type="hidden" name="fecha" id="fecha_hidden" />
+<button
+    class="text-white bg-green-700 hover:bg-green-800 font-medium rounded-lg text-sm px-5 py-2.5"
+>
+    Terminar Pedido
+</button>
+</form>
+
+<h2 class="text-xl font-bold mt-10">Consulta por día</h2>
+<form action="/consulta_dia" method="POST">
+{{ pizzaForm.hidden_tag() }}
+<input type="text" name="dia" placeholder="Lunes" class="border p-2" />
+<button class="bg-blue-500 text-white px-4 py-2">Buscar</button>
+</form>
+{% if ventas_dia %}
+<h3 class="mt-4 font-bold">Ventas encontradas</h3>
+<table class="table-auto border">
+<tr>
+    <th>ID</th>
+    <th>Fecha</th>
+    <th>Total</th>
+    <th>Detalle</th>
+</tr>
+{% for v in ventas_dia %}
+<tr>
+    <td>{{ v.id_pedido }}</td>
+    <td>{{ v.fecha }}</td>
+    <td>${{ v.total }}</td>
+    <td>
+    <form action="/detalle" method="POST">
+        {{ pizzaForm.hidden_tag() }}
+        <input type="hidden" name="id_pedido" value="{{ v.id_pedido }}" />
+        <button class="text-blue-600">Ver</button>
+    </form>
+    </td>
+</tr>
+{% endfor %}
+</table>
+<h3 class="font-bold mt-4">Total del día: ${{ total_dia }}</h3>
+{% endif %}
+
+<h2 class="text-xl font-bold mt-10">Consulta por mes</h2>
+<form action="/consulta_mes" method="POST">
+{{ pizzaForm.hidden_tag() }}
+<input type="text" name="mes" placeholder="Mes" class="border p-2" />
+<button class="bg-blue-500 text-white px-4 py-2">Buscar</button>
+</form>
+{% if ventas_mes %}
+<h3 class="mt-4 font-bold">Ventas del mes</h3>
+<table class="table-auto border">
+<tr>
+    <th>ID</th>
+    <th>Fecha</th>
+    <th>Total</th>
+    <th>Detalle</th>
+</tr>
+{% for v in ventas_mes %}
+<tr>
+    <td>{{ v.id_pedido }}</td>
+    <td>{{ v.fecha }}</td>
+    <td>${{ v.total }}</td>
+    <td>
+    <a href="/detalle/{{ v.id_pedido }}" class="text-blue-600"> Ver </a>
+    </td>
+</tr>
+{% endfor %}
+</table>
+<h3 class="font-bold mt-4">Total del mes: ${{ total_mes }}</h3>
+{% endif %} {% if detalles %}
+<h2 class="text-xl font-bold mt-10">Detalle del pedido</h2>
+<table class="table-auto border">
+<tr>
+    <th>Pizza</th>
+    <th>Ingredientes</th>
+    <th>Cantidad</th>
+    <th>Subtotal</th>
+</tr>
+{% for d in detalles %}
+<tr>
+    <td>{{ d.pizza.tamano }}</td>
+    <td>{{ d.pizza.ingredientes }}</td>
+    <td>{{ d.cantidad }}</td>
+    <td>${{ d.subtotal }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+<script>
+document
+    .querySelector("form[action='/terminar']")
+    .addEventListener("submit", function () {
+    document.getElementById("nombre_hidden").value = document.querySelector(
+        "input[name='nombre']",
+    ).value;
+
+    document.getElementById("direccion_hidden").value =
+        document.querySelector("input[name='direccion']").value;
+
+    document.getElementById("telefono_hidden").value = document.querySelector(
+        "input[name='telefono']",
+    ).value;
+
+    document.getElementById("fecha_hidden").value = document.querySelector(
+        "input[name='fecha']",
+    ).value;
+    });
+</script>
+
+{% endblock %}
